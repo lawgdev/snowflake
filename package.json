@@ -1,0 +1,17 @@
+{
+  "name": "@lawg.dev/snowflake",
+  "module": "index.ts",
+  "type": "module",
+  "scripts": {
+    "test": "bun test",
+    "benchmark": "bun bench/index.bench.ts",
+    "benchmark-throughput": "bun bench/throughput.bench.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "mitata": "^1.0.34"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}

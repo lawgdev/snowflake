@@ -49,6 +49,18 @@ describe("Snowflake", () => {
   });
 
   describe("generate", () => {
+    // https://en.wikipedia.org/wiki/Snowflake_ID#Example
+    test("Wikipedia example is correct", () => {
+      const snowflake = new Snowflake(1288834974657); // twitter's epoch
+
+      const existingId = BigInt("1888944671579078978");
+      const decoded = snowflake.decode(existingId);
+
+      expect(decoded.timestamp).toBe(1739194479256);
+      expect(decoded.nodeId).toBe(360);
+      expect(decoded.sequence).toBe(322);
+    });
+
     test("should generate a valid snowflake id", () => {
       const snowflake = new Snowflake(TEST_EPOCH);
       const id = snowflake.generate();

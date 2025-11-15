@@ -32,10 +32,33 @@ export class Snowflake {
     this.epoch = BigInt(epoch);
   }
 
+  /**
+   * Gets the node/machine ID used by this Snowflake instance.
+   *
+   * By default, this is computed from the MAC address of the machine's network interfaces. If a node ID override was provided during instantiation, that value will be returned instead. If no valid MAC address could be found and no override was provided, a random integer between 0 and 1023 is used, which may lead to collisions in distributed systems.
+   *
+   * @returns the ID of the node/machine
+   */
   public getNodeId(): number {
     return this.nodeId;
   }
 
+  /**
+   * Generates a new snowflake ID.
+   *
+   * The snowflake ID is a 64-bit integer with the following bit layout:
+   * ```
+   * ┌─────────────────────────────────────────────┬───────────────┬───────────────────┐
+   * │          Timestamp (41 bits)                │ Node (10 bits)│ Sequence (12 bits)│
+   * │  Milliseconds since custom epoch            │   Machine ID  │   Per-ms counter  │
+   * └─────────────────────────────────────────────┴───────────────┴───────────────────┘
+   *  63                                            22              12               0
+   * ```
+   *
+   * @important This method is synchronous and will block the event loop if the sequence overflows within the same millisecond, as it will wait for the next millisecond to continue generating IDs.
+   *
+   * @returns a bigint representing the snowflake ID
+   */
   public generate(): bigint {
     const now = BigInt(Date.now());
 
@@ -60,16 +83,50 @@ export class Snowflake {
     this.lastTimestamp = timestampSinceEpoch;
 
     const id =
-      (timestampSinceEpoch << 22n) | // shift left 41 bits for timestamp
-      (BigInt(this.nodeId) << 12n) | // shift left 12 bits for node id
-      BigInt(this.sequence); // shift 12 bits for sequence
+      (timestampSinceEpoch << 22n) | // shift left 22 bits (10 bits for node id + 12 bits for sequence)
+      (BigInt(this.nodeId) << 12n) | // shift left 12 bits for sequence
+      BigInt(this.sequence); // fill last 12 bits
 
     return id;
   }
 
+  /**
+   * Decodes a snowflake ID into its constituent parts: timestamp, node ID, and sequence number.
+   *
+   * @example
+   * ```ts
+   * const snowflake = new Snowflake(1609459200000); // Custom epoch: January 1, 2021
+   * const id = snowflake.generate();
+   * const decoded = snowflake.decode(id);
+   * console.log(decoded);
+   * // {
+   * //   timestamp: 1617187200000,  (March 30, 2021 00:00:00 GMT)
+   * //   nodeId: 123,               (node/machine ID 123)
+   * //   sequence: 14               (14th ID created within the same millisecond)
+   * // }
+   * ```
+   *
+   * @param snowflakeId the snowflake ID to decode
+   * @returns an object containing the timestamp, node ID, and sequence number
+   */
   public decode(snowflakeId: bigint): {
+    /**
+     * The unix timestamp in which the ID was created
+     *
+     * @example 1617187200000 // (March 30, 2021 00:00:00 GMT)
+     */
     timestamp: number;
+    /**
+     * the node/machine that created the ID
+
+     @example 123 // (node/machine ID 123)
+     */
     nodeId: number;
+    /**
+     * The sequence of the ID
+     *
+     * @example 14 // (14th ID created within the same millisecond)
+     */
     sequence: number;
   } {
     const timestamp =

@@ -67,7 +67,11 @@ export class Snowflake {
     return id;
   }
 
-  public decode(snowflakeId: bigint) {
+  public decode(snowflakeId: bigint): {
+    timestamp: number;
+    nodeId: number;
+    sequence: number;
+  } {
     const timestamp =
       Number((snowflakeId >> 22n) & 0x1ffffffffffn) + Number(this.epoch); // shift right 22 bits and mask 41 bits
     const nodeId = Number((snowflakeId >> 12n) & 0x3ffn); // shift right 12 bits and mask 10 bits

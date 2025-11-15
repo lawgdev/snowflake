@@ -1,17 +1,42 @@
 {
   "name": "@lawg.dev/snowflake",
-  "module": "index.ts",
   "type": "module",
+  "version": "1.0.1",
+  "publishConfig": {
+    "access": "public"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+github.com/lawgdev/snowflake.git"
+  },
+  "bugs": {
+    "url": "https://github.com/lawgdev/snowflake/issues/new"
+  },
+  "author": "Cody Miller <cody@lawg.dev>",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "package.json"
+  ],
+  "keywords": [
+    "snowflake",
+    "nodejs-snowflake",
+    "twitter snowflake",
+    "twitter",
+    "snowflake id"
+  ],
   "scripts": {
+    "build": "bun bunup --minify",
     "test": "bun test",
     "benchmark": "bun bench/index.bench.ts",
     "benchmark-throughput": "bun bench/throughput.bench.ts"
   },
   "devDependencies": {
     "@types/bun": "latest",
-    "mitata": "^1.0.34"
-  },
-  "peerDependencies": {
+    "bunup": "^0.15.14",
+    "mitata": "^1.0.34",
     "typescript": "^5"
   }
 }

@@ -18,7 +18,27 @@ export class Snowflake {
    * @param epoch An EPOCH override in milliseconds (MUST BE IN MILLISECONDS)
    * @param nodeIdOverride If provided, this node id will be used instead of computing it from the MAC address, this may be useful if you are in an environment where MAC addresses are not available. Please ensure that node IDs are unique across all instances to avoid ID collisions.
    */
-  constructor(epoch: number, nodeIdOverride?: number) {
+  constructor({
+    epoch = 1288834974657, // default to use twitter's snowflake epoch (November 4, 2010)
+    nodeIdOverride,
+  }: Partial<{
+    /**
+     * The epoch to base your IDs off of. **MUST BE UNIX TIMESTAMP IN MILLISECONDS**
+     *
+     * @example 1288834974657 // (November 4, 2010)
+     */
+    epoch?: number;
+    /**
+     * Providing a nodeId (aka machine ID) override will skip generation based off the MAC address of the first valid network interface found.
+     *
+     * This may be useful in environments where MAC addresses are not available.
+     *
+     * Please ensure that node IDs are unique across all instances to avoid ID collisions.
+     *
+     * @example 123 // (node/machine ID 123)
+     */
+    nodeIdOverride?: number;
+  }> = {}) {
     if (nodeIdOverride !== undefined) {
       if (nodeIdOverride > 1023) {
         throw new SnowflakeError(

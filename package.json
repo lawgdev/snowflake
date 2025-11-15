@@ -1,7 +1,7 @@
 {
   "name": "@lawg.dev/snowflake",
   "type": "module",
-  "version": "1.0.1",
+  "version": "1.0.3",
   "publishConfig": {
     "access": "public"
   },
@@ -31,7 +31,8 @@
     "build": "bun bunup --minify",
     "test": "bun test",
     "benchmark": "bun bench/index.bench.ts",
-    "benchmark-throughput": "bun bench/throughput.bench.ts"
+    "benchmark-throughput": "bun bench/throughput.bench.ts",
+    "publish": "bun run build && bun publish"
   },
   "devDependencies": {
     "@types/bun": "latest",

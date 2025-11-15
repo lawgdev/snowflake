@@ -6,36 +6,53 @@ const TEST_EPOCH = 1609459200000; // jan 1, 2021 00:00:00 utc
 describe("Snowflake", () => {
   describe("constructor", () => {
     test("should create instance with valid epoch", () => {
-      const snowflake = new Snowflake(TEST_EPOCH);
+      const snowflake = new Snowflake({ epoch: TEST_EPOCH });
       expect(snowflake).toBeInstanceOf(Snowflake);
+    });
+
+    test("should create instance without a epoch specified", () => {
+      const snowflake = new Snowflake();
+      expect(snowflake).toBeInstanceOf(Snowflake);
+
+      const snowflakeWithObj = new Snowflake({});
+      expect(snowflakeWithObj).toBeInstanceOf(Snowflake);
+
+      const snowflakeWithUnd = new Snowflake({ epoch: undefined });
+      expect(snowflakeWithUnd).toBeInstanceOf(Snowflake);
     });
 
     test("should accept node id override", () => {
       const nodeId = 42;
-      const snowflake = new Snowflake(TEST_EPOCH, nodeId);
+      const snowflake = new Snowflake({
+        epoch: TEST_EPOCH,
+        nodeIdOverride: nodeId,
+      });
       expect(snowflake.getNodeId()).toBe(nodeId);
     });
 
     test("should throw error when node id override is greater than 1023", () => {
-      expect(() => new Snowflake(TEST_EPOCH, 1024)).toThrow(
-        "Node ID override must be between 0 and 1023.",
-      );
+      expect(
+        () => new Snowflake({ epoch: TEST_EPOCH, nodeIdOverride: 1024 }),
+      ).toThrow("Node ID override must be between 0 and 1023.");
     });
 
     test("should accept maximum valid node id override", () => {
-      const snowflake = new Snowflake(TEST_EPOCH, 1023);
+      const snowflake = new Snowflake({
+        epoch: TEST_EPOCH,
+        nodeIdOverride: 1023,
+      });
       expect(snowflake.getNodeId()).toBe(1023);
     });
 
     test("should accept minimum valid node id override", () => {
-      const snowflake = new Snowflake(TEST_EPOCH, 0);
+      const snowflake = new Snowflake({ epoch: TEST_EPOCH, nodeIdOverride: 0 });
       expect(snowflake.getNodeId()).toBe(0);
     });
   });
 
   describe("getNodeId", () => {
     test("should return computed node id when no override provided", () => {
-      const snowflake = new Snowflake(TEST_EPOCH);
+      const snowflake = new Snowflake({ epoch: TEST_EPOCH });
       const nodeId = snowflake.getNodeId();
       expect(nodeId).toBeGreaterThanOrEqual(0);
       expect(nodeId).toBeLessThanOrEqual(1023);
@@ -43,7 +60,10 @@ describe("Snowflake", () => {
 
     test("should return overridden node id when provided", () => {
       const customNodeId = 123;
-      const snowflake = new Snowflake(TEST_EPOCH, customNodeId);
+      const snowflake = new Snowflake({
+        epoch: TEST_EPOCH,
+        nodeIdOverride: customNodeId,
+      });
       expect(snowflake.getNodeId()).toBe(customNodeId);
     });
   });
@@ -51,7 +71,7 @@ describe("Snowflake", () => {
   describe("generate", () => {
     // https://en.wikipedia.org/wiki/Snowflake_ID#Example
     test("Wikipedia example is correct", () => {
-      const snowflake = new Snowflake(1288834974657); // twitter's epoch
+      const snowflake = new Snowflake({ epoch: 1288834974657 }); // twitter's epoch
 
       const existingId = BigInt("1888944671579078978");
       const decoded = snowflake.decode(existingId);
@@ -62,14 +82,14 @@ describe("Snowflake", () => {
     });
 
     test("should generate a valid snowflake id", () => {
-      const snowflake = new Snowflake(TEST_EPOCH);
+      const snowflake = new Snowflake({ epoch: TEST_EPOCH });
       const id = snowflake.generate();
       expect(typeof id).toBe("bigint");
       expect(id).toBeGreaterThan(0);
     });
 
     test("should generate unique ids", () => {
-      const snowflake = new Snowflake(TEST_EPOCH);
+      const snowflake = new Snowflake({ epoch: TEST_EPOCH });
       const ids = new Set();
 
       for (let i = 0; i < 1000; i++) {
@@ -80,7 +100,7 @@ describe("Snowflake", () => {
     });
 
     test("should generate incrementing ids", () => {
-      const snowflake = new Snowflake(TEST_EPOCH);
+      const snowflake = new Snowflake({ epoch: TEST_EPOCH });
       const id1 = snowflake.generate();
       const id2 = snowflake.generate();
       const id3 = snowflake.generate();
@@ -90,7 +110,7 @@ describe("Snowflake", () => {
     });
 
     test("should handle sequence overflow within same millisecond", () => {
-      const snowflake = new Snowflake(TEST_EPOCH);
+      const snowflake = new Snowflake({ epoch: TEST_EPOCH });
       const ids: bigint[] = [];
 
       // generate many ids quickly to trigger sequence overflow
@@ -105,7 +125,10 @@ describe("Snowflake", () => {
 
     test("should encode node id in generated snowflake", () => {
       const nodeId = 456;
-      const snowflake = new Snowflake(TEST_EPOCH, nodeId);
+      const snowflake = new Snowflake({
+        epoch: TEST_EPOCH,
+        nodeIdOverride: nodeId,
+      });
       const id = snowflake.generate();
 
       // extract node id from snowflake (bits 12-21)
@@ -114,7 +137,7 @@ describe("Snowflake", () => {
     });
 
     test("should encode timestamp in generated snowflake", () => {
-      const snowflake = new Snowflake(TEST_EPOCH);
+      const snowflake = new Snowflake({ epoch: TEST_EPOCH });
       const beforeGenerate = Date.now();
       const id = snowflake.generate();
       const afterGenerate = Date.now();
@@ -127,7 +150,7 @@ describe("Snowflake", () => {
     });
 
     test("should encode sequence in generated snowflake", () => {
-      const snowflake = new Snowflake(TEST_EPOCH);
+      const snowflake = new Snowflake({ epoch: TEST_EPOCH });
       const id1 = snowflake.generate();
       const id2 = snowflake.generate();
 
@@ -144,7 +167,7 @@ describe("Snowflake", () => {
     });
 
     test("should reset sequence when timestamp changes", () => {
-      const snowflake = new Snowflake(TEST_EPOCH);
+      const snowflake = new Snowflake({ epoch: TEST_EPOCH });
 
       // generate an id
       snowflake.generate();
@@ -163,8 +186,8 @@ describe("Snowflake", () => {
       const epoch1 = 1609459200000;
       const epoch2 = 1640995200000; // jan 1, 2022
 
-      const snowflake1 = new Snowflake(epoch1);
-      const snowflake2 = new Snowflake(epoch2);
+      const snowflake1 = new Snowflake({ epoch: epoch1 });
+      const snowflake2 = new Snowflake({ epoch: epoch2 });
 
       const id1 = snowflake1.generate();
       const id2 = snowflake2.generate();
@@ -175,8 +198,14 @@ describe("Snowflake", () => {
     });
 
     test("should generate ids with different node ids that are unique", () => {
-      const snowflake1 = new Snowflake(TEST_EPOCH, 1);
-      const snowflake2 = new Snowflake(TEST_EPOCH, 2);
+      const snowflake1 = new Snowflake({
+        epoch: TEST_EPOCH,
+        nodeIdOverride: 1,
+      });
+      const snowflake2 = new Snowflake({
+        epoch: TEST_EPOCH,
+        nodeIdOverride: 2,
+      });
 
       const ids = new Set();
 
@@ -189,7 +218,7 @@ describe("Snowflake", () => {
     });
 
     test("should handle rapid generation", () => {
-      const snowflake = new Snowflake(TEST_EPOCH);
+      const snowflake = new Snowflake({ epoch: TEST_EPOCH });
       const start = performance.now();
       const ids: bigint[] = [];
 
@@ -208,7 +237,7 @@ describe("Snowflake", () => {
   describe("edge cases", () => {
     test("should handle epoch set to current time", () => {
       const now = Date.now();
-      const snowflake = new Snowflake(now);
+      const snowflake = new Snowflake({ epoch: now });
       const id = snowflake.generate();
 
       expect(id).toBeGreaterThan(0);
@@ -216,7 +245,7 @@ describe("Snowflake", () => {
 
     test("should work with epoch from the past", () => {
       const oldEpoch = 946684800000; // jan 1, 2000
-      const snowflake = new Snowflake(oldEpoch);
+      const snowflake = new Snowflake({ epoch: oldEpoch });
       const id = snowflake.generate();
 
       expect(id).toBeGreaterThan(0);
@@ -224,8 +253,14 @@ describe("Snowflake", () => {
 
     test("should maintain uniqueness across multiple instances with same config", () => {
       const nodeId = 42;
-      const snowflake1 = new Snowflake(TEST_EPOCH, nodeId);
-      const snowflake2 = new Snowflake(TEST_EPOCH, nodeId);
+      const snowflake1 = new Snowflake({
+        epoch: TEST_EPOCH,
+        nodeIdOverride: nodeId,
+      });
+      const snowflake2 = new Snowflake({
+        epoch: TEST_EPOCH,
+        nodeIdOverride: nodeId,
+      });
 
       const ids1 = new Set();
       const ids2 = new Set();
@@ -251,7 +286,7 @@ describe("Snowflake", () => {
 
   describe("id structure validation", () => {
     test("should produce 64-bit compatible ids", () => {
-      const snowflake = new Snowflake(TEST_EPOCH);
+      const snowflake = new Snowflake({ epoch: TEST_EPOCH });
       const id = snowflake.generate();
 
       // check that id fits in 64 bits (2^63 - 1 for signed, 2^64 - 1 for unsigned)
@@ -261,7 +296,10 @@ describe("Snowflake", () => {
 
     test("should correctly pack all components", () => {
       const nodeId = 512;
-      const snowflake = new Snowflake(TEST_EPOCH, nodeId);
+      const snowflake = new Snowflake({
+        epoch: TEST_EPOCH,
+        nodeIdOverride: nodeId,
+      });
       const id = snowflake.generate();
 
       // extract and verify each component
@@ -278,7 +316,7 @@ describe("Snowflake", () => {
 
   describe("decode", () => {
     test("should decode a generated snowflake id", () => {
-      const snowflake = new Snowflake(TEST_EPOCH);
+      const snowflake = new Snowflake({ epoch: TEST_EPOCH });
       const id = snowflake.generate();
       const decoded = snowflake.decode(id);
 
@@ -288,7 +326,7 @@ describe("Snowflake", () => {
     });
 
     test("should correctly extract timestamp from id", () => {
-      const snowflake = new Snowflake(TEST_EPOCH);
+      const snowflake = new Snowflake({ epoch: TEST_EPOCH });
       const beforeGenerate = Date.now();
       const id = snowflake.generate();
       const afterGenerate = Date.now();
@@ -300,7 +338,10 @@ describe("Snowflake", () => {
 
     test("should correctly extract node id from id", () => {
       const nodeId = 789;
-      const snowflake = new Snowflake(TEST_EPOCH, nodeId);
+      const snowflake = new Snowflake({
+        epoch: TEST_EPOCH,
+        nodeIdOverride: nodeId,
+      });
       const id = snowflake.generate();
       const decoded = snowflake.decode(id);
 
@@ -308,7 +349,7 @@ describe("Snowflake", () => {
     });
 
     test("should correctly extract sequence from id", () => {
-      const snowflake = new Snowflake(TEST_EPOCH);
+      const snowflake = new Snowflake({ epoch: TEST_EPOCH });
       const id1 = snowflake.generate();
       const id2 = snowflake.generate();
       const id3 = snowflake.generate();
@@ -327,7 +368,10 @@ describe("Snowflake", () => {
 
     test("should decode multiple ids correctly", () => {
       const nodeId = 256;
-      const snowflake = new Snowflake(TEST_EPOCH, nodeId);
+      const snowflake = new Snowflake({
+        epoch: TEST_EPOCH,
+        nodeIdOverride: nodeId,
+      });
       const ids: bigint[] = [];
 
       for (let i = 0; i < 100; i++) {
@@ -347,8 +391,8 @@ describe("Snowflake", () => {
       const epoch1 = 1609459200000;
       const epoch2 = 1640995200000;
 
-      const snowflake1 = new Snowflake(epoch1);
-      const snowflake2 = new Snowflake(epoch2);
+      const snowflake1 = new Snowflake({ epoch: epoch1 });
+      const snowflake2 = new Snowflake({ epoch: epoch2 });
 
       const id1 = snowflake1.generate();
       const id2 = snowflake2.generate();
@@ -362,7 +406,10 @@ describe("Snowflake", () => {
 
     test("should round-trip encode and decode", () => {
       const nodeId = 512;
-      const snowflake = new Snowflake(TEST_EPOCH, nodeId);
+      const snowflake = new Snowflake({
+        epoch: TEST_EPOCH,
+        nodeIdOverride: nodeId,
+      });
 
       for (let i = 0; i < 50; i++) {
         const id = snowflake.generate();
@@ -375,7 +422,7 @@ describe("Snowflake", () => {
     });
 
     test("should decode sequence overflow correctly", () => {
-      const snowflake = new Snowflake(TEST_EPOCH);
+      const snowflake = new Snowflake({ epoch: TEST_EPOCH });
       const ids: bigint[] = [];
 
       // generate many ids quickly to test sequence values
@@ -394,7 +441,10 @@ describe("Snowflake", () => {
       const testNodeIds = [0, 1, 255, 512, 1023];
 
       testNodeIds.forEach((nodeId) => {
-        const snowflake = new Snowflake(TEST_EPOCH, nodeId);
+        const snowflake = new Snowflake({
+          epoch: TEST_EPOCH,
+          nodeIdOverride: nodeId,
+        });
         const id = snowflake.generate();
         const decoded = snowflake.decode(id);
 
@@ -403,7 +453,7 @@ describe("Snowflake", () => {
     });
 
     test("should maintain timestamp accuracy across decodes", () => {
-      const snowflake = new Snowflake(TEST_EPOCH);
+      const snowflake = new Snowflake({ epoch: TEST_EPOCH });
       const ids: bigint[] = [];
       const timestamps: number[] = [];
 
